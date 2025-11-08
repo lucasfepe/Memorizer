@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Memorization App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .mode-toggle {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background-color: #ccc;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-switch.active {
+            background-color: #4CAF50;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .mode-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .mode-description {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            border-radius: 5px;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .percentage {
+            text-align: center;
+            font-size: 18px;
+            color: #4CAF50;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:active {
+            background-color: #3d9142;
+        }
+
+        #output {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            line-height: 1.8;
+            font-size: 18px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .word {
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .blank {
+            display: inline-block;
+            border-bottom: 2px solid #333;
+            min-width: 60px;
+            margin: 0 2px;
+            text-align: center;
+            color: #333;
+        }
+
+        .blank-line {
+            display: inline-block;
+            border-bottom: 2px solid #333;
+            min-width: 200px;
+            margin: 0 2px;
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Text Memorization Helper</h1>
+
+        <div>
+            <label for="inputText">Paste your text here:</label>
+            <textarea id="inputText" placeholder="Enter the text you want to memorize..."></textarea>
+        </div>
+
+        <div class="controls">
+            <div class="mode-toggle">
+                <div>
+                    <div class="mode-label">Blanking Mode: <span id="modeText">By Word</span></div>
+                    <div class="mode-description">Toggle to switch between hiding individual words or entire lines</div>
+                </div>
+                <div class="toggle-container">
+                    <span>Word</span>
+                    <div class="toggle-switch" id="modeToggle" onclick="toggleMode()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span>Line</span>
+                </div>
+            </div>
+
+            <div class="slider-container">
+                <label for="visibilitySlider"><span id="sliderLabel">Word</span> Visibility:</label>
+                <input type="range" id="visibilitySlider" min="0" max="100" value="50">
+                <div class="percentage" id="percentageDisplay">50%</div>
+            </div>
+
+            <button onclick="randomizeWords()">Randomize Hidden <span id="buttonLabel">Words</span></button>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let textStructure = [];
+        let allWords = [];
+        let allLines = [];
+        let visibleIndices = new Set();
+        let isLineMode = false;
+
+        // Toggle between word and line mode
+        function toggleMode() {
+            isLineMode = !isLineMode;
+            const toggle = document.getElementById('modeToggle');
+            const modeText = document.getElementById('modeText');
+            const sliderLabel = document.getElementById('sliderLabel');
+            const buttonLabel = document.getElementById('buttonLabel');
+
+            if (isLineMode) {
+                toggle.classList.add('active');
+                modeText.textContent = 'By Line';
+                sliderLabel.textContent = 'Line';
+                buttonLabel.textContent = 'Lines';
+            } else {
+                toggle.classList.remove('active');
+                modeText.textContent = 'By Word';
+                sliderLabel.textContent = 'Word';
+                buttonLabel.textContent = 'Words';
+            }
+
+            // Re-parse and display with new mode
+            parseText();
+        }
+
+        // Parse text and maintain structure with line breaks
+        function parseText() {
+            const inputText = document.getElementById('inputText').value;
+            if (!inputText.trim()) {
+                document.getElementById('output').innerHTML = 'Please enter some text above.';
+                return;
+            }
+
+            // Split text by lines
+            const lines = inputText.split('\n');
+            textStructure = [];
+            allWords = [];
+            allLines = [];
+
+            lines.forEach((line, lineIndex) => {
+                const lineWords = line.match(/\S+/g) || [];
+                const lineData = {
+                    words: [],
+                    isEmpty: lineWords.length === 0,
+                    lineIndex: allLines.length,
+                    fullText: line
+                };
+
+                // Only add non-empty lines to allLines
+                if (!lineData.isEmpty) {
+                    allLines.push(line);
+                }
+
+                lineWords.forEach(word => {
+                    lineData.words.push({
+                        text: word,
+                        globalIndex: allWords.length
+                    });
+                    allWords.push(word);
+                });
+
+                textStructure.push(lineData);
+            });
+
+            // Initialize with random visible items based on slider
+            randomizeWords();
+        }
+
+        // Update display based on current visibility settings
+        function updateDisplay() {
+            if (textStructure.length === 0) {
+                parseText();
+                return;
+            }
+
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = '';
+
+            textStructure.forEach((lineData, lineIndex) => {
+                if (lineData.isEmpty) {
+                    // Empty line
+                    if (lineIndex > 0) {
+                        outputDiv.appendChild(document.createElement('br'));
+                    }
+                } else {
+                    // Line with content
+                    if (lineIndex > 0) {
+                        outputDiv.appendChild(document.createElement('br'));
+                    }
+
+                    if (isLineMode) {
+                        // Line mode: treat entire line as one unit
+                        if (visibleIndices.has(lineData.lineIndex)) {
+                            const span = document.createElement('span');
+                            span.className = 'word';
+                            span.textContent = lineData.fullText;
+                            outputDiv.appendChild(span);
+                        } else {
+                            const span = document.createElement('span');
+                            span.className = 'blank-line';
+                            span.innerHTML = '&nbsp;__________&nbsp;';
+                            outputDiv.appendChild(span);
+                        }
+                    } else {
+                        // Word mode: handle individual words
+                        lineData.words.forEach((wordData, wordIndex) => {
+                            const span = document.createElement('span');
+
+                            if (visibleIndices.has(wordData.globalIndex)) {
+                                span.className = 'word';
+                                span.textContent = wordData.text;
+                            } else {
+                                span.className = 'blank';
+                                span.innerHTML = '&nbsp;____&nbsp;';
+                            }
+
+                            outputDiv.appendChild(span);
+
+                            // Add space between words (but not after the last word in a line)
+                            if (wordIndex < lineData.words.length - 1) {
+                                outputDiv.appendChild(document.createTextNode(' '));
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Randomize which words/lines are visible based on percentage
+        function randomizeWords() {
+            const items = isLineMode ? allLines : allWords;
+
+            if (items.length === 0) {
+                parseText();
+                return;
+            }
+
+            if (items.length === 0) return;
+
+            const visibilityPercentage = document.getElementById('visibilitySlider').value;
+            const numVisible = Math.round((visibilityPercentage / 100) * items.length);
+
+            // Create array of all indices
+            const allIndices = Array.from({ length: items.length }, (_, i) => i);
+
+            // Shuffle array
+            for (let i = allIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+            }
+
+            // Select first numVisible indices
+            visibleIndices = new Set(allIndices.slice(0, numVisible));
+
+            updateDisplay();
+        }
+
+        // Handle slider change
+        document.getElementById('visibilitySlider').addEventListener('input', function (e) {
+            const percentage = e.target.value;
+            document.getElementById('percentageDisplay').textContent = percentage + '%';
+
+            const items = isLineMode ? allLines : allWords;
+            const numVisible = Math.round((percentage / 100) * items.length);
+
+            // If we need to show more items, add random hidden items
+            if (numVisible > visibleIndices.size) {
+                const hiddenIndices = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (!visibleIndices.has(i)) {
+                        hiddenIndices.push(i);
+                    }
+                }
+
+                // Shuffle hidden indices
+                for (let i = hiddenIndices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [hiddenIndices[i], hiddenIndices[j]] = [hiddenIndices[j], hiddenIndices[i]];
+                }
+
+                // Add needed number of items
+                const toAdd = numVisible - visibleIndices.size;
+                for (let i = 0; i < toAdd && i < hiddenIndices.length; i++) {
+                    visibleIndices.add(hiddenIndices[i]);
+                }
+            }
+            // If we need to hide items, remove random visible items
+            else if (numVisible < visibleIndices.size) {
+                const visibleArray = Array.from(visibleIndices);
+
+                // Shuffle visible indices
+                for (let i = visibleArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [visibleArray[i], visibleArray[j]] = [visibleArray[j], visibleArray[i]];
+                }
+
+                // Remove needed number of items
+                const toRemove = visibleIndices.size - numVisible;
+                for (let i = 0; i < toRemove; i++) {
+                    visibleIndices.delete(visibleArray[i]);
+                }
+            }
+
+            updateDisplay();
+        });
+
+        // Handle text input change
+        document.getElementById('inputText').addEventListener('input', function () {
+            parseText();
+        });
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', function () {
+            parseText();
+        });
+    </script>
+</body>
+
+</html>
