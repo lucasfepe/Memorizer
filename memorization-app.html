@@ -264,6 +264,7 @@
         <div>
             <label for="inputText">Paste your text here:</label>
             <textarea id="inputText" placeholder="Enter the text you want to memorize..."></textarea>
+            <button onclick="toggleTextArea()" style="margin-top: 10px;">Hide/Show Text</button>
         </div>
 
         <div class="controls">
@@ -484,6 +485,27 @@
                 return dp[m][n];
             }
 
+        // Check if two strings differ only by one transposed pair of adjacent letters
+            function hasTransposedLetters(str1, str2) {
+                if (str1.length !== str2.length) return false;
+
+                let differences = [];
+                for (let i = 0; i < str1.length; i++) {
+                    if (str1[i] !== str2[i]) {
+                        differences.push(i);
+                    }
+                }
+
+                // Check if exactly 2 adjacent positions are different and transposed
+                if (differences.length === 2 &&
+                    differences[1] - differences[0] === 1 &&
+                    str1[differences[0]] === str2[differences[1]] &&
+                    str1[differences[1]] === str2[differences[0]]) {
+                    return true;
+                }
+                return false;
+            }
+
         // Check all answers and show results
         function checkAnswers() {
             let correct = 0;
@@ -503,7 +525,8 @@
                 input.classList.remove('correct', 'incorrect');
 
 
-                if (editDistance(userAnswer.toLowerCase(), correctAnswer.toLowerCase()) <= 1) {
+                if (editDistance(userAnswer.toLowerCase(), correctAnswer.toLowerCase()) <= 1 ||
+                    hasTransposedLetters(userAnswer.toLowerCase(), correctAnswer.toLowerCase())) {
                     input.classList.add('correct');
                     correct++;
                 } else {
@@ -625,6 +648,23 @@
         document.addEventListener('DOMContentLoaded', function () {
             parseText();
         });
+
+        // Toggle visibility of the input text area
+            function toggleTextArea() {
+                const textarea = document.getElementById('inputText');
+                const label = textarea.previousElementSibling;
+                const button = event.target;
+
+                if (textarea.style.display === 'none') {
+                    textarea.style.display = 'block';
+                    label.style.display = 'block';
+                    button.textContent = 'Hide Text';
+                } else {
+                    textarea.style.display = 'none';
+                    label.style.display = 'none';
+                    button.textContent = 'Show Text';
+                }
+            }
     </script>
 </body>
 
