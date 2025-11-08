@@ -162,6 +162,7 @@
             cursor: pointer;
             width: 100%;
             transition: background-color 0.3s;
+            margin-bottom: 10px;
         }
 
         button:hover {
@@ -170,6 +171,15 @@
 
         button:active {
             background-color: #3d9142;
+        }
+
+        .check-button {
+            background-color: #2196F3;
+            margin-top: 10px;
+        }
+
+        .check-button:hover {
+            background-color: #1976D2;
         }
 
         #output {
@@ -189,22 +199,56 @@
             margin: 0 2px;
         }
 
-        .blank {
+        .blank-input {
             display: inline-block;
+            border: none;
             border-bottom: 2px solid #333;
-            min-width: 60px;
-            margin: 0 2px;
+            background-color: transparent;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
             text-align: center;
-            color: #333;
+            margin: 0 2px;
+            padding: 2px 5px;
+            min-width: 80px;
+            outline: none;
         }
 
-        .blank-line {
-            display: inline-block;
-            border-bottom: 2px solid #333;
-            min-width: 200px;
-            margin: 0 2px;
+        .blank-input:focus {
+            border-bottom: 2px solid #2196F3;
+            background-color: #f0f0f0;
+        }
+
+        .blank-input.correct {
+            background-color: #c8e6c9;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .blank-input.incorrect {
+            background-color: #ffcdd2;
+            border-bottom: 2px solid #f44336;
+        }
+
+        .score-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
             text-align: center;
-            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .score-display.show {
+            display: block;
+        }
+
+        .correct-answer {
+            font-size: 14px;
+            color: #666;
+            display: inline;
+            margin-top: 5px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -240,9 +284,11 @@
             </div>
 
             <button onclick="randomizeWords()">Randomize Hidden <span id="buttonLabel">Words</span></button>
+            <button class="check-button" onclick="checkAnswers()">Check Answers</button>
         </div>
 
         <div id="output"></div>
+        <div class="score-display" id="scoreDisplay"></div>
     </div>
 
     <script>
@@ -251,6 +297,7 @@
         let allLines = [];
         let visibleIndices = new Set();
         let isLineMode = false;
+        let inputElements = [];
 
         // Toggle between word and line mode
         function toggleMode() {
@@ -328,6 +375,10 @@
 
             const outputDiv = document.getElementById('output');
             outputDiv.innerHTML = '';
+            inputElements = [];
+
+            // Hide score display when updating
+            document.getElementById('scoreDisplay').classList.remove('show');
 
             textStructure.forEach((lineData, lineIndex) => {
                 if (lineData.isEmpty) {
@@ -349,26 +400,55 @@
                             span.textContent = lineData.fullText;
                             outputDiv.appendChild(span);
                         } else {
-                            const span = document.createElement('span');
-                            span.className = 'blank-line';
-                            span.innerHTML = '&nbsp;__________&nbsp;';
-                            outputDiv.appendChild(span);
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'blank-input';
+                            input.style.width = '150px';
+                            input.dataset.correctAnswer = lineData.fullText;
+                            input.placeholder = '...';
+
+                            // Add enter key support to move to next input
+                            input.addEventListener('keypress', function (e) {
+                                if (e.key === 'Enter') {
+                                    const currentIndex = inputElements.indexOf(input);
+                                    if (currentIndex < inputElements.length - 1) {
+                                        inputElements[currentIndex + 1].focus();
+                                    }
+                                }
+                            });
+
+                            outputDiv.appendChild(input);
+                            inputElements.push(input);
                         }
                     } else {
                         // Word mode: handle individual words
                         lineData.words.forEach((wordData, wordIndex) => {
-                            const span = document.createElement('span');
-
                             if (visibleIndices.has(wordData.globalIndex)) {
+                                const span = document.createElement('span');
                                 span.className = 'word';
                                 span.textContent = wordData.text;
+                                outputDiv.appendChild(span);
                             } else {
-                                span.className = 'blank';
-                                span.innerHTML = '&nbsp;____&nbsp;';
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.className = 'blank-input';
+                                input.style.width = Math.max(wordData.text.length * 10, 80) + 'px';
+                                input.dataset.correctAnswer = wordData.text;
+                                input.placeholder = '...';
+
+                                // Add enter key support to move to next input
+                                input.addEventListener('keypress', function (e) {
+                                    if (e.key === 'Enter') {
+                                        const currentIndex = inputElements.indexOf(input);
+                                        if (currentIndex < inputElements.length - 1) {
+                                            inputElements[currentIndex + 1].focus();
+                                        }
+                                    }
+                                });
+
+                                outputDiv.appendChild(input);
+                                inputElements.push(input);
                             }
-
-                            outputDiv.appendChild(span);
-
                             // Add space between words (but not after the last word in a line)
                             if (wordIndex < lineData.words.length - 1) {
                                 outputDiv.appendChild(document.createTextNode(' '));
@@ -377,6 +457,60 @@
                     }
                 }
             });
+        }
+
+        // Check all answers and show results
+        function checkAnswers() {
+            let correct = 0;
+            let total = inputElements.length;
+            
+            inputElements.forEach(input => {
+                const userAnswer = input.value.trim();
+                const correctAnswer = input.dataset.correctAnswer;
+
+                // Remove any existing correct answer display (only the one directly after this input)
+                let nextElement = input.nextElementSibling;
+                if (nextElement && nextElement.classList.contains('correct-answer')) {
+                    nextElement.remove();
+                }
+
+                // Remove previous styling
+                input.classList.remove('correct', 'incorrect');
+
+
+                if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                    input.classList.add('correct');
+                    correct++;
+                } else {
+                    input.classList.add('incorrect');
+
+                    // Show the correct answer next to the input
+                    if (userAnswer !== '') {
+                        const answerDisplay = document.createElement('span');
+                        answerDisplay.className = 'correct-answer';
+                        answerDisplay.textContent = `Correct: ${correctAnswer}`;
+                        input.parentNode.insertBefore(answerDisplay, input.nextSibling);
+                    }
+                }
+            });
+
+            // Display score
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+            let scoreMessage = `Score: ${correct}/${total} (${percentage}%)`;
+            if (percentage === 100) {
+                scoreMessage += ' 🎉 Perfect!';
+            } else if (percentage >= 80) {
+                scoreMessage += ' 👏 Great job!';
+            } else if (percentage >= 60) {
+                scoreMessage += ' 👍 Good effort!';
+            } else {
+                scoreMessage += ' 💪 Keep practicing!';
+            }
+
+            scoreDisplay.textContent = scoreMessage;
+            scoreDisplay.classList.add('show');
         }
 
         // Randomize which words/lines are visible based on percentage
